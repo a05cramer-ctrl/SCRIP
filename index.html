@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scrip</title>
+<meta name="description" content="Scrip turns AI model credit into a token you own. Buy it, hold it in your wallet, send it, redeem it, or spend it on models through one API.">
+<meta name="theme-color" content="#111110">
+<meta property="og:title" content="Scrip">
+<meta property="og:description" content="AI model credit, held in your wallet.">
+<meta property="og:image" content="og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="og.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111110'/%3E%3Cpath d='M14 18h36a4 4 0 0 1 4 4v8a4 4 0 0 0 0 8v8a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4v-8a4 4 0 0 0 0-8v-8a4 4 0 0 1 4-4z' fill='%236f8cff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Red+Hat+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: framed single column on a hairline grid, hero with a drifting ticket stack, then the sections the reference runs in the same order. */
+:root{--bg:#111110;--bg2:#171715;--line:#262624;--line2:#34342f;--fg:#ecece8;--mut:#8d8d86;--dim:#5e5e58;--acc:#6f8cff;--acc-d:#4a63d6;--ok:#6fd49a;--font-d:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;--font-m:'Red Hat Mono',ui-monospace,'SF Mono',Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{overflow-x:clip}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--font-d);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
+.mono{font-family:var(--font-m)}
+.lab{font:500 11px/1 var(--font-m);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.frame{max-width:1240px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line);position:relative}
+.pad{padding-inline:clamp(16px,4vw,48px)}
+.sec{border-top:1px solid var(--line)}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:30;background:rgba(17,17,16,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav .in{max-width:1240px;margin:0 auto;height:52px;display:flex;align-items:center;gap:28px;padding-inline:clamp(16px,4vw,48px)}
+.brand{display:flex;align-items:center;gap:10px;font:600 13px/1 var(--font-d);letter-spacing:.26em;text-transform:uppercase}
+.brand svg{width:28px;height:28px;flex:none}
+.links{display:flex;gap:4px;margin-left:8px}
+.links>*{position:relative}
+.links a.t,.links button.t{display:flex;align-items:center;gap:5px;height:34px;padding:0 10px;border-radius:8px;color:var(--mut);font-size:13.5px;background:none;border:0;cursor:pointer}
+.links a.t:hover,.links button.t:hover,.links .dd:focus-within>.t{color:var(--fg)}
+.links .car{width:8px;height:8px;opacity:.7}
+.dd .menu{position:absolute;left:0;top:100%;min-width:190px;padding:6px;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;display:none;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.dd:hover .menu,.dd:focus-within .menu{display:block}
+.dd .menu a{display:block;padding:9px 12px;border-radius:8px;color:var(--mut);font-size:13.5px}
+.dd .menu a:hover{background:#1f1f1c;color:var(--fg)}
+.sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:999px;background:var(--fg);color:#111110;font-weight:500;font-size:13.5px;border:0;cursor:pointer;white-space:nowrap}
+.pill:hover{background:#fff}
+.pill.ghost{background:transparent;color:var(--fg);border:1px solid var(--line2)}
+.pill.ghost:hover{background:#1c1c1a}
+.pill.lg{height:40px;padding:0 20px;font-size:14px}
+.off{cursor:default}
+a.off:not(.pill){opacity:.55}
+
+/* hero */
+.hero{position:relative;padding-block:clamp(64px,11vw,120px) clamp(56px,8vw,88px);overflow:hidden}
+.hero .txt{position:relative;z-index:2;max-width:640px}
+h1{margin:0;font-weight:500;font-size:clamp(54px,9.4vw,116px);line-height:.94;letter-spacing:-.045em;text-wrap:balance}
+h1 .b{color:var(--acc)}
+.hero p.sub{margin:36px 0 0;max-width:30em;color:var(--mut);font-size:clamp(16px,1.5vw,19px);line-height:1.55}
+.hero p.sub b{color:var(--fg);font-weight:500}
+.ca{margin-top:34px;display:inline-flex;max-width:100%;border:1px solid var(--line2);background:var(--bg2);font:400 13px/1 var(--font-m)}
+.ca .tk{padding:14px 12px;border-right:1px solid var(--line2);color:var(--mut);white-space:nowrap}
+.ca .tk b{color:var(--fg);font-weight:500}
+.ca .v{padding:14px 16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ca button{padding:0 14px;border:0;border-left:1px solid var(--line2);background:none;cursor:pointer;color:var(--mut)}
+.ca button:hover{color:var(--fg);background:#1d1d1a}
+.ca button svg{width:15px;height:15px;display:block}
+.cta{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
+.hero .note{margin-top:34px;display:flex;align-items:center;gap:9px}
+.hero .note i{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.stack{position:absolute;right:0;top:0;bottom:0;width:min(54%,700px);z-index:1}
+.stack canvas{width:100%;height:100%;display:block}
+
+/* three columns */
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.cols3>div{padding:30px clamp(16px,2.4vw,32px) 38px;border-right:1px solid var(--line)}
+.cols3>div:last-child{border-right:0}
+.cols3 h3{margin:0 0 12px;font-weight:500;font-size:17px;display:flex;gap:10px;align-items:baseline}
+.cols3 h3 span{font:400 11px/1 var(--font-m);color:var(--dim)}
+.cols3 p{margin:0;color:var(--mut);font-size:14px;max-width:26em}
+
+/* statement */
+.state{padding-block:clamp(72px,11vw,150px)}
+.state p{margin:0;max-width:17em;font-weight:500;font-size:clamp(28px,4.4vw,56px);line-height:1.12;letter-spacing:-.03em;text-wrap:balance}
+.state .w{color:var(--dim);transition:color .5s}
+.state .w.on{color:var(--fg)}
+
+/* section head */
+.sh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:22px 18px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;border:1px solid var(--line2);border-radius:999px;font:500 10.5px/1 var(--font-m);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.chip i{width:5px;height:5px;border-radius:50%;background:var(--acc)}
+
+/* how it works cards */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.step{position:relative;padding:22px clamp(16px,2vw,28px) 24px;border-right:1px solid var(--line);transition:background .4s}
+.step:last-child{border-right:0}
+.step.on{background:linear-gradient(180deg,#1a1c25,transparent)}
+.step .top{display:flex;justify-content:space-between;align-items:center;font:400 11px/1 var(--font-m);color:var(--dim)}
+.step .dot{width:7px;height:7px;border-radius:50%;background:#2f2f2b;transition:background .3s}
+.step.on .dot{background:var(--acc);box-shadow:0 0 12px var(--acc)}
+.step h4{margin:34px 0 8px;font-weight:500;font-size:24px;letter-spacing:-.02em;color:var(--mut);transition:color .3s}
+.step.on h4{color:var(--fg)}
+.step p{margin:0;color:var(--mut);font-size:13.5px;max-width:15em;min-height:3.1em}
+.step .eg{margin-top:24px;padding-top:12px;border-top:1px dashed var(--line2);display:flex;justify-content:space-between;font:400 11px/1 var(--font-m);color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.step .eg b{font-weight:400;color:var(--fg);letter-spacing:0}
+
+/* split rows */
+.row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.row>.l{padding:clamp(40px,6vw,76px) clamp(16px,4vw,48px);border-right:1px solid var(--line);min-width:0}
+.row>.r{padding:clamp(24px,4vw,56px) clamp(16px,4vw,48px);min-width:0;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.row h2{margin:18px 0 18px;font-weight:500;font-size:clamp(30px,4vw,48px);line-height:1.04;letter-spacing:-.035em;max-width:11em;text-wrap:balance}
+.row p.d{margin:0 0 26px;color:var(--mut);max-width:30em}
+.pts{list-style:none;margin:0 0 26px;padding:0;display:grid;gap:12px}
+.pts li{display:flex;align-items:center;gap:12px;font-size:14.5px}
+.pts li i{width:28px;height:28px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;flex:none;color:var(--mut)}
+.pts li i svg{width:13px;height:13px}
+.more{font-size:13.5px;display:inline-flex;gap:6px;align-items:center;color:var(--fg)}
+.more:hover{color:var(--acc)}
+.tabs{display:flex;gap:16px}
+.tabs span{font:500 11px/1 var(--font-m);letter-spacing:.1em;color:var(--dim)}
+.tabs span.on{color:var(--fg)}
+.card{border:1px solid var(--line2);background:var(--bg2);border-radius:14px;overflow:hidden}
+.card .hd{display:flex;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line2)}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--mut)}
+.kv span:last-child{font-family:var(--font-m);font-size:13.5px;text-align:right}
+.kv .acc{color:var(--acc)}
+.kv.lg{display:block}
+.kv.lg .lab{display:block;margin-bottom:10px}
+.kv.lg .e{display:flex;justify-content:space-between;font:400 13px/1 var(--font-m);color:var(--mut)}
+.kv.lg .e b{color:var(--ok);font-weight:500}
+.acts{display:grid;gap:0}
+.acts .a{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.acts .a em{font:400 11px/1 var(--font-m);color:var(--dim);font-style:normal;width:20px}
+.acts .a.dn{color:var(--fg)}
+.acts .a.dn::after{content:"";margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.acts .a:last-child{border-bottom:0}
+.sm{display:flex;gap:28px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line2);background:#141413}
+.sm div{display:grid;gap:6px}
+.sm b{font:500 15px/1 var(--font-m)}
+.demoTag{padding-inline:2px}
+
+/* stats row */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.stats>div{padding:36px clamp(16px,2.4vw,32px) 34px;border-right:1px solid var(--line)}
+.stats>div:last-child{border-right:0}
+.stats b{display:block;font-weight:500;font-size:clamp(40px,5.2vw,64px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.stats span{display:block;margin-top:12px;color:var(--mut);font-size:13.5px}
+
+/* ledger */
+.lhead{padding-block:clamp(48px,7vw,90px) 40px;display:grid;gap:18px}
+.lhead h2{margin:0;font-weight:500;font-size:clamp(28px,4vw,50px);line-height:1.08;letter-spacing:-.03em;max-width:15em;text-wrap:balance}
+.lhead h2 span{color:var(--mut)}
+.tbl{border-top:1px solid var(--line);overflow-x:auto}
+.tbl table{width:100%;min-width:640px;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;padding:13px clamp(16px,4vw,48px);font:500 11px/1 var(--font-m);letter-spacing:.12em;color:var(--dim);border-bottom:1px solid var(--line);text-transform:uppercase}
+.tbl td{padding:20px clamp(16px,4vw,48px);border-bottom:1px solid var(--line);color:var(--mut);vertical-align:top}
+.tbl td:first-child{color:var(--fg);font-weight:500;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:last-child{font-family:var(--font-m);font-size:12.5px;white-space:nowrap}
+
+/* utility */
+.util{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.util>div{padding:28px clamp(16px,2vw,28px) 34px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px;min-width:0}
+.util>div:last-child{border-right:0}
+.util .top{display:flex;justify-content:space-between;align-items:center}
+.util .big{font-weight:500;font-size:clamp(26px,3vw,36px);letter-spacing:-.03em;line-height:1.05}
+.util p{margin:0;color:var(--mut);font-size:13.5px}
+.util .st{margin-top:auto;padding-top:6px;font:500 10.5px/1 var(--font-m);letter-spacing:.1em;color:var(--acc)}
+.util .st.next{color:var(--dim)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.grid4>div{padding:26px clamp(16px,2vw,28px);border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.grid4>div:nth-child(4n){border-right:0}
+.grid4 .v{margin-top:14px;font:500 clamp(20px,2.2vw,26px)/1 var(--font-m);color:var(--dim);letter-spacing:-.02em}
+.grid4 .s{margin-top:8px;font-size:12.5px;color:var(--dim)}
+.foot-note{padding-block:18px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+.foot-note .lk{display:flex;gap:18px}
+.foot-note .lk a:hover{color:var(--acc)}
+
+/* dev */
+.code{border:1px solid var(--line2);background:#0c0c0b;border-radius:14px;overflow:hidden}
+.code .hd{display:flex;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line2)}
+.code pre{margin:0;padding:20px 18px;overflow-x:auto;font:400 12.5px/1.75 var(--font-m);color:#c9c9c2}
+.code pre .p{color:var(--dim)}
+.code pre .k{color:var(--acc)}
+.code pre .s{color:#e6c07b}
+
+/* closing */
+.close{padding-block:clamp(72px,10vw,130px);text-align:left}
+.close h2{margin:0;font-weight:500;font-size:clamp(44px,8vw,96px);line-height:.96;letter-spacing:-.045em}
+.close h2 .b{color:var(--acc)}
+.close p{margin:26px 0 30px;color:var(--mut);max-width:32em}
+footer{border-top:1px solid var(--line)}
+.fgrid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px;padding-block:44px}
+.fgrid h5{margin:0 0 14px}
+.fgrid a{display:block;color:var(--mut);font-size:14px;padding:4px 0}
+.fgrid a:hover{color:var(--fg)}
+.fgrid .tag{color:var(--mut);max-width:22em;margin:16px 0 0;font-size:14px}
+.fine{border-top:1px solid var(--line);padding-block:20px 34px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:12.5px}
+.fine p{margin:0;max-width:56em}
+
+@media (max-width:980px){
+  .links{display:none}
+  .stack{position:relative;width:100%;height:300px;margin-top:20px}
+  .hero{padding-bottom:20px}
+  .steps,.util{grid-template-columns:1fr 1fr}
+  .step:nth-child(2),.util>div:nth-child(2){border-right:0}
+  .step:nth-child(-n+2),.util>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .grid4{grid-template-columns:1fr 1fr}
+  .grid4>div:nth-child(4n){border-right:1px solid var(--line)}
+  .grid4>div:nth-child(2n){border-right:0}
+  .row{grid-template-columns:1fr}
+  .row>.l{border-right:0}
+  .fgrid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .pill{height:44px}.pill.lg{height:48px}
+  .fgrid a{padding:12px 0}.more{padding:12px 0}.foot-note .lk a{padding:12px 0}
+  .ca button{min-width:48px}
+  .cols3,.stats{grid-template-columns:1fr}
+  .cols3>div,.stats>div{border-right:0;border-bottom:1px solid var(--line)}
+  .cols3>div:last-child,.stats>div:last-child{border-bottom:0}
+  .steps,.util,.grid4{grid-template-columns:1fr}
+  .step,.util>div,.grid4>div{border-right:0!important;border-bottom:1px solid var(--line)}
+  .step:last-child,.util>div:last-child{border-bottom:0}
+  .nav .in{gap:12px}
+  .ca .v{max-width:46vw}
+  .fgrid{grid-template-columns:1fr 1fr;gap:24px}
+  .fgrid>div:first-child{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.state .w{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="in">
+    <a class="brand" href="#top" aria-label="Scrip">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 18h36a4 4 0 0 1 4 4v8a4 4 0 0 0 0 8v8a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4v-8a4 4 0 0 0 0-8v-8a4 4 0 0 1 4-4z" fill="#6f8cff"/><path d="M42 21v22" stroke="#111110" stroke-width="2.4" stroke-dasharray="3.2 3.2"/></svg>
+      Scrip
+    </a>
+    <nav class="links" aria-label="Main">
+      <div class="dd"><button class="t" type="button">Product <svg class="car" viewBox="0 0 8 8"><path d="M1 2.5 4 5.5 7 2.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button><div class="menu"><a href="#credit">Buy and swap</a><a href="#use">Send and redeem</a><a href="#verify">Verify on the ledger</a></div></div>
+      <a class="t" href="#how">How it works</a>
+      <div class="dd"><button class="t" type="button">Utility <svg class="car" viewBox="0 0 8 8"><path d="M1 2.5 4 5.5 7 2.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button><div class="menu"><a href="#utility">Staking</a><a href="#utility">Cashback</a><a href="#utility">$SCRIP bonus</a></div></div>
+      <div class="dd"><button class="t" type="button">Developers <svg class="car" viewBox="0 0 8 8"><path d="M1 2.5 4 5.5 7 2.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button><div class="menu"><a href="#developers">API</a><a href="#developers">Extension</a></div></div>
+      <a class="t" href="#developers">Docs</a>
+    </nav>
+    <span class="sp"></span>
+    <a class="pill" data-buy href="#">Buy $SCRIP</a>
+  </div>
+</header>
+
+<main id="top" class="frame">
+
+  <section class="hero pad" aria-labelledby="h">
+    <div class="txt">
+      <h1 id="h">Your scrip.<br><span class="b">Onchain.</span></h1>
+      <p class="sub">Scrip is a new kind of AI credit: bought with stablecoin or swapped from any listed token, issued as a token you own. <b>Send it to any wallet, swap into it, or spend it on supported models through the API.</b></p>
+      <div class="ca" role="group" aria-label="Contract address">
+        <span class="tk">$<b>SCRIP</b> CA</span>
+        <span class="v" id="caText">Dropping soon</span>
+        <button type="button" id="caCopy" aria-label="Copy contract address"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.2A1.3 1.3 0 0 0 9.2 2H3.8A1.3 1.3 0 0 0 2.5 3.3v5.4A1.3 1.3 0 0 0 3.8 10h.2"/></svg></button>
+      </div>
+      <div class="cta">
+        <a class="pill lg" data-buy href="#">Buy $SCRIP <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l6-6M4 3h5v5"/></svg></a>
+        <a class="pill lg ghost" href="#how">How it works</a>
+      </div>
+      <div class="note lab"><i></i>100 scrip = $1 face value</div>
+    </div>
+    <div class="stack" aria-hidden="true"><canvas id="stackCv"></canvas></div>
+  </section>
+
+  <div class="cols3">
+    <div><h3><span>01</span>Buy</h3><p>Pay with stablecoin. Every $1 becomes 100 scrip, issued as an onchain asset in your own wallet. Swap in SOL or listed tokens with a direct deposit.</p></div>
+    <div><h3><span>02</span>Hold</h3><p>Scrip lives onchain as a balance you control: transferable, provable, never trapped in a vendor account.</p></div>
+    <div><h3><span>03</span>Spend</h3><p>Send scrip to any wallet, redeem it for crypto paid to your wallet, stake it, or spend it on inference through the model API. Every action leaves a public record.</p></div>
+  </div>
+
+  <section class="sec state pad" aria-label="Why scrip">
+    <p id="stmt">Prepaid AI credit sits in one vendor's account, cannot be moved or proven, and lapses unused. Scrip is credit you buy once and keep.</p>
+  </section>
+
+  <section class="sec" id="how">
+    <div class="sh pad"><span class="lab">01 / How it works</span><span class="chip"><i></i>Demonstration</span></div>
+    <div class="steps" id="steps">
+      <div class="step"><div class="top"><span>01</span><i class="dot"></i></div><h4>Buy</h4><p>Pay in stablecoin at a fixed $1 = 100 scrip.</p><div class="eg"><span>e.g. mint</span><b data-v="0">0 cr</b></div></div>
+      <div class="step"><div class="top"><span>02</span><i class="dot"></i></div><h4>Hold</h4><p>Scrip sits in your own wallet, transferable.</p><div class="eg"><span>e.g. held</span><b data-v="1">0 cr</b></div></div>
+      <div class="step"><div class="top"><span>03</span><i class="dot"></i></div><h4>Spend</h4><p>Each model call burns exactly what it used.</p><div class="eg"><span>e.g. burn</span><b data-v="2">0 cr</b></div></div>
+      <div class="step"><div class="top"><span>04</span><i class="dot"></i></div><h4>Verify</h4><p>Every event gets a public onchain hash.</p><div class="eg"><span>e.g. tx</span><b data-v="3">0x…</b></div></div>
+    </div>
+  </section>
+
+  <section class="row" id="credit">
+    <div class="l">
+      <span class="lab">01 / Credit</span>
+      <h2>From capital to credit, onchain.</h2>
+      <p class="d">Convert stablecoins, SOL or listed tokens into tokenized model credit at a fixed face value, 100 scrip for every dollar. You send the asset in one wallet signature, and scrip lands in your wallet. Every transfer, spend and stake is written to a public ledger you can check yourself.</p>
+      <ul class="pts">
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="3" width="11" height="8" rx="1.5"/><path d="M1.5 6h11"/></svg></i>Pay in stablecoin</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="7" r="5.2"/><path d="M7 4v6M5 6h3a1 1 0 0 1 0 2H5"/></svg></i>100 scrip per $1</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 1.5h8v11H3zM5 4.5h4M5 7h4M5 9.5h2"/></svg></i>Every event on the ledger</li>
+      </ul>
+      <a class="more" href="#verify">Explore more <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l6-6M4 3h5v5"/></svg></a>
+    </div>
+    <div class="r">
+      <div class="tabs"><span class="on">01 CREDIT</span><span>02 USE</span><span>03 VERIFY</span></div>
+      <div class="card">
+        <div class="hd"><span class="lab">Purchase</span><span class="lab">Example</span></div>
+        <div class="kv"><span>Spend</span><span>250.00 USDC</span></div>
+        <div class="kv"><span>Receive</span><span>25,000 scrip</span></div>
+        <div class="kv"><span>Face value</span><span>$250.00</span></div>
+        <div class="kv"><span>Paid in $SCRIP</span><span class="acc">+10% bonus</span></div>
+        <div class="kv lg"><span class="lab">Ledger entry</span><div class="e"><span>09:12:30 · Credit purchase</span><b>+25,000</b></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row" id="use">
+    <div class="l">
+      <span class="lab">02 / Use</span>
+      <h2>Send it. Swap it. Redeem it.</h2>
+      <p class="d">Scrip is an ordinary onchain asset. Send it to any wallet, swap SOL or any listed token into it with a direct deposit, or redeem it for crypto paid straight back to your wallet at the live price.</p>
+      <ul class="pts">
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1.5 6.5 12.5 1.5 8 12.5 6.5 8z"/></svg></i>Send to any wallet</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 5h9l-2-2M12 9H3l2 2"/></svg></i>Swap onchain</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="1.5" width="11" height="11" rx="2"/><path d="M4.5 7h5M7.5 5l2 2-2 2"/></svg></i>Redeem through the model API</li>
+      </ul>
+      <a class="more" href="#developers">Explore more <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l6-6M4 3h5v5"/></svg></a>
+    </div>
+    <div class="r">
+      <div class="tabs"><span>01 CREDIT</span><span class="on">02 USE</span><span>03 VERIFY</span></div>
+      <div class="card">
+        <div class="hd"><span class="lab">Scrip actions</span><span class="lab">Example</span></div>
+        <div class="acts">
+          <div class="a dn"><em>01</em>Scrip in wallet</div>
+          <div class="a dn"><em>02</em>Choose: send, swap or redeem</div>
+          <div class="a dn"><em>03</em>Transaction signed</div>
+          <div class="a dn"><em>04</em>Confirmed onchain</div>
+          <div class="a dn"><em>05</em>Balance updated</div>
+        </div>
+        <div class="sm"><div><span class="lab">Balance</span><b>25,000</b></div><div><span class="lab">Redeem rate</span><b>100 / $1</b></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row" id="verify">
+    <div class="l">
+      <span class="lab">03 / Verify</span>
+      <h2>Don't trust the dashboard. Read the chain.</h2>
+      <p class="d">Every scrip event carries an onchain record with a public hash: issuance, transfers, swaps, burns, redemption and rewards. If it is not on the chain, it did not happen.</p>
+      <ul class="pts">
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="7" cy="7" r="2"/><path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.500 4 13 7c-1.500 3-3.500 4.500-6 4.500S2.500 10 1 7z"/></svg></i>Issuance and transfers</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5.500 8.500l3-3M4 6.500l-1.500 1.500a2.100 2.100 0 0 0 3 3L7 9.500M10 7.500l1.500-1.500a2.100 2.100 0 0 0-3-3L7 4.500"/></svg></i>Public explorer hashes</li>
+        <li><i><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 7.500l3.500 3.500L12 3.500"/></svg></i>Settlement and rewards</li>
+      </ul>
+      <a class="more" href="#ledger">Explore more <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l6-6M4 3h5v5"/></svg></a>
+    </div>
+    <div class="r">
+      <div class="tabs"><span>01 CREDIT</span><span>02 USE</span><span class="on">03 VERIFY</span></div>
+      <div class="card">
+        <div class="hd"><span class="lab">Contracts</span><span class="lab">Solana mainnet</span></div>
+        <div class="kv"><span>Scrip mint</span><span>Posts at launch</span></div>
+        <div class="kv"><span>Purchase program</span><span>Posts at launch</span></div>
+        <div class="kv"><span>Staking program</span><span>Posts at launch</span></div>
+        <div class="kv"><span>$SCRIP token</span><span id="caShort">Posts at launch</span></div>
+        <div class="kv"><span>Burn address</span><span>1nc1nerator…1111</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats" id="statsRow">
+    <div><b data-n="100">0</b><span>scrip per $1</span></div>
+    <div><b>1:1</b><span>issued as purchased</span></div>
+    <div><b data-n="3">0</b><span>ways to spend</span></div>
+    <div><b data-n="1">0</b><span>public ledger of every event</span></div>
+  </div>
+
+  <section class="sec" id="ledger">
+    <div class="lhead pad"><span class="lab">02 / Scrip ledger</span><h2>Every scrip leaves a line. <span>Nothing moves off the record.</span></h2></div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Event</th><th>What is recorded onchain</th><th>Verify</th></tr></thead>
+        <tbody>
+          <tr><td>Scrip purchase / swap</td><td>Your deposit and the scrip sent to your wallet</td><td>Explorer ↗</td></tr>
+          <tr><td>Scrip transfer</td><td>Standard token transfer between wallets</td><td>Explorer ↗</td></tr>
+          <tr><td>$SCRIP burn</td><td>$SCRIP sent to the burn address after scrip lands</td><td>Explorer ↗</td></tr>
+          <tr><td>Stake / unstake</td><td>Lock and unlock on the staking program</td><td>Explorer ↗</td></tr>
+          <tr><td>Cashback</td><td>Stablecoin sent wallet to wallet after each swap</td><td>In your wallet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="utility">
+    <div class="sh pad"><span class="lab">03 / Utility</span><span class="chip"><i></i>Launch design</span></div>
+    <div class="lhead pad" style="padding-block:6px 40px"><h2 style="font-size:clamp(26px,3.6vw,44px)">Idle scrip should not sit still. <span>Four ways it works for you.</span></h2></div>
+    <div class="util">
+      <div><div class="top"><span class="lab">Staking</span></div><div class="big">2.5 / 4.5 / 8%</div><p>Lock scrip onchain for 3, 7 or 30 days. At unlock you claim your scrip back and the stablecoin reward goes straight to your wallet.</p><span class="st">AT LAUNCH</span></div>
+      <div><div class="top"><span class="lab">Cashback</span></div><div class="big">5%</div><p>Flat 5% stablecoin cashback on every swap into scrip. Up to 5 USDC per swap, sent wallet to wallet.</p><span class="st">AT LAUNCH</span></div>
+      <div><div class="top"><span class="lab">$SCRIP bonus</span></div><div class="big">+10%</div><p>Buy scrip directly with $SCRIP and get 10% extra scrip. Every $SCRIP paid is burned right after the scrip lands, with a public burn link.</p><span class="st">AT LAUNCH</span></div>
+      <div><div class="top"><span class="lab">X interface</span></div><div class="big">@scrip send</div><p>Mention Scrip on X to check your balance or send scrip to any X username.</p><span class="st next">NEXT</span></div>
+    </div>
+    <div class="foot-note pad"><span>Rates are launch design. Final numbers post at launch.</span></div>
+  </section>
+
+  <section class="sec" id="activity">
+    <div class="sh pad"><span class="lab">04 / Network activity</span><span class="chip"><i></i>Starts at launch</span></div>
+    <div class="grid4">
+      <div><span class="lab">Swap volume</span><div class="v">—</div><div class="s">Posts at launch</div></div>
+      <div><span class="lab">Direct buy volume</span><div class="v">—</div><div class="s">Posts at launch</div></div>
+      <div><span class="lab">Cashback received</span><div class="v">—</div><div class="s">Posts at launch</div></div>
+      <div><span class="lab">Scrip used</span><div class="v">—</div><div class="s">Spent on model requests</div></div>
+    </div>
+  </section>
+
+  <section class="sec" id="token">
+    <div class="sh pad"><span class="lab">05 / $SCRIP stats</span><span class="chip"><i></i>Starts at launch</span></div>
+    <div class="grid4">
+      <div><span class="lab">Price</span><div class="v">—</div></div>
+      <div><span class="lab">Market cap</span><div class="v">—</div><div class="s">Price × circulating supply</div></div>
+      <div><span class="lab">Total burned</span><div class="v">—</div></div>
+      <div><span class="lab">Burned via scrip</span><div class="v">—</div><div class="s">Burns from scrip purchases</div></div>
+      <div><span class="lab">Circulating supply</span><div class="v">—</div><div class="s">of 1B total supply</div></div>
+      <div><span class="lab">Liquidity</span><div class="v">—</div></div>
+      <div><span class="lab">24h volume</span><div class="v">—</div></div>
+      <div><span class="lab">Holder perk</span><div class="v" style="color:var(--acc)">+10%</div><div class="s">Extra scrip when you pay with $SCRIP</div></div>
+    </div>
+    <div class="foot-note pad"><span>Every $SCRIP paid for scrip is burned right after the scrip lands.</span><span class="lk"><a data-chart href="#">Chart ↗</a><a data-x href="#">X ↗</a></span></div>
+  </section>
+
+  <section class="row" id="developers">
+    <div class="l">
+      <span class="lab">06 / Developers</span>
+      <h2>One key. One balance. Pay for inference in scrip.</h2>
+      <p class="d">A REST API metered in scrip. Each call debits your onchain balance and returns exactly what it cost, so usage always reconciles against the ledger. No invoices, no surprises.</p>
+      <a class="pill ghost" href="#developers">Manage API keys</a>
+    </div>
+    <div class="r">
+      <div class="code">
+        <div class="hd"><span class="lab">request.sh</span><span class="lab">Example</span></div>
+<pre><span class="p">$</span> curl -X POST <span class="k">$SCRIP_API</span>/v1/chat \
+  -H <span class="s">"x-scrip-key: $SCRIP_KEY"</span> \
+  -H <span class="s">"Idempotency-Key: req_7f3a91c2"</span> \
+  -d <span class="s">'{"model":"default",</span>
+     <span class="s">"messages":[{"role":"user","content":"hello"}]}'</span>
+
+{
+  <span class="k">"content"</span>: <span class="s">"Hello."</span>,
+  <span class="k">"usage"</span>: {<span class="k">"inputTokens"</span>: 4, <span class="k">"outputTokens"</span>: 2},
+  <span class="k">"scripCharged"</span>: 150
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec close pad">
+    <h2>Your scrip.<br><span class="b">Onchain.</span></h2>
+    <p>Scrip is credit for AI models that you hold in your own wallet. Buy it, send it, stake it, and spend it through the API.</p>
+    <a class="pill lg" data-buy href="#">Buy $SCRIP</a>
+  </section>
+
+  <footer>
+    <div class="fgrid pad">
+      <div>
+        <a class="brand" href="#top" style="padding:0"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 18h36a4 4 0 0 1 4 4v8a4 4 0 0 0 0 8v8a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4v-8a4 4 0 0 0 0-8v-8a4 4 0 0 1 4-4z" fill="#6f8cff"/><path d="M42 21v22" stroke="#111110" stroke-width="2.4" stroke-dasharray="3.2 3.2"/></svg>Scrip</a>
+        <p class="tag">Credit for AI models. Held in your wallet.</p>
+      </div>
+      <div><h5 class="lab">Product</h5><a href="#credit">Buy and swap</a><a href="#how">How it works</a><a href="#utility">Utility</a></div>
+      <div><h5 class="lab">Build</h5><a href="#developers">Docs</a><a href="#developers">API keys</a><a href="#developers">Extension</a></div>
+      <div><h5 class="lab">Community</h5><a data-buy href="#">Buy $SCRIP</a><a data-chart href="#">Chart</a><a data-x href="#">X</a></div>
+    </div>
+    <div class="pad fine"><p>© 2026 Scrip. Scrip is a memecoin with a product plan. Rates and numbers on this page are launch design, not live data. Nothing here is financial advice.</p></div>
+  </footer>
+</main>
+
+<script src="config.js"></script>
+<script>
+(function(){
+  var C = window.SCRIP_CFG || {};
+  var ca = (C.CA||'').trim();
+  var buy = C.BUY || (ca ? 'https://pump.fun/coin/'+ca : '');
+  var chart = C.CHART || (ca ? 'https://gmgn.ai/sol/token/'+ca : '');
+  var x = C.X || '';
+  function wire(sel, url){
+    document.querySelectorAll(sel).forEach(function(a){
+      if(url){ a.href=url; a.target='_blank'; a.rel='noopener'; a.classList.remove('off'); a.removeAttribute('title'); }
+      else { a.classList.add('off'); a.title='Dropping soon'; a.addEventListener('click',function(e){e.preventDefault();}); }
+    });
+  }
+  wire('[data-buy]',buy); wire('[data-chart]',chart); wire('[data-x]',x);
+  var caText=document.getElementById('caText'), caShort=document.getElementById('caShort');
+  if(ca){ caText.textContent=ca; caShort.textContent=ca.slice(0,4)+'…'+ca.slice(-4); }
+  var cp=document.getElementById('caCopy');
+  cp.addEventListener('click',function(){
+    if(!ca){ caText.textContent='Dropping soon'; return; }
+    var done=function(){ var o=caText.textContent; caText.textContent='Copied'; setTimeout(function(){caText.textContent=ca;},1100); };
+    try{ navigator.clipboard.writeText(ca).then(done,function(){ var r=document.createRange(); r.selectNodeContents(caText); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }); }
+    catch(e){ var r=document.createRange(); r.selectNodeContents(caText); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+  });
+
+  /* statement: words brighten as they cross the middle of the screen */
+  var st=document.getElementById('stmt'), words=[];
+  st.innerHTML = st.textContent.split(' ').map(function(w){ return '<span class="w">'+w+'</span>'; }).join(' ');
+  words=[].slice.call(st.querySelectorAll('.w'));
+  function reveal(){
+    var r=st.getBoundingClientRect(), vh=innerHeight;
+    var p=Math.min(1,Math.max(0,(vh*0.85-r.top)/(r.height+vh*0.35)));
+    var n=Math.round(p*words.length);
+    words.forEach(function(w,i){ w.classList.toggle('on', i<n); });
+  }
+  addEventListener('scroll',reveal,{passive:true}); addEventListener('resize',reveal); reveal();
+
+  /* how it works loop (demonstration) */
+  var steps=[].slice.call(document.querySelectorAll('#steps .step')), vals=[].slice.call(document.querySelectorAll('#steps [data-v]'));
+  var targets=[25000,25000,150], hex='0x9f3a…c41e', cur=-1;
+  function fmt(n){ return n.toLocaleString('en-US')+' cr'; }
+  function tick(){
+    cur=(cur+1)%4;
+    steps.forEach(function(s,i){ s.classList.toggle('on', i===cur); });
+    if(cur===0){ vals.forEach(function(v,i){ v.textContent = i===3?'0x…':'0 cr'; }); }
+    var el=vals[cur];
+    if(cur===3){ el.textContent=hex; return; }
+    var t0=performance.now(), to=targets[cur];
+    (function f(now){ var p=Math.min(1,(now-t0)/700); el.textContent=fmt(Math.round(to*(1-Math.pow(1-p,3)))); if(p<1) requestAnimationFrame(f); })(t0);
+  }
+  steps[0].classList.add('on'); vals[0].textContent=fmt(25000); vals[1].textContent='0 cr'; cur=0;
+  setInterval(tick,2600);
+
+  /* stats count up */
+  document.querySelectorAll('[data-n]').forEach(function(el){
+    var to=+el.dataset.n; el.textContent=to;
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(!e.isIntersecting) return; io.disconnect(); var t0=performance.now(); (function f(now){ var p=Math.min(1,(now-t0)/900); el.textContent=Math.round(to*(1-Math.pow(1-p,3))); if(p<1) requestAnimationFrame(f); })(t0); }); },{threshold:.6});
+    io.observe(el);
+  });
+
+  /* hero: stack of scrip tickets */
+  var cv=document.getElementById('stackCv'), g=cv.getContext('2d'), W=0,H=0,mx=0,my=0,tx=0,ty=0,reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function size(){ var d=Math.min(2,devicePixelRatio||1), b=cv.getBoundingClientRect(); W=b.width; H=b.height; cv.width=W*d; cv.height=H*d; g.setTransform(d,0,0,d,0,0); }
+  function ticket(w,h,r,n){
+    g.beginPath();
+    g.moveTo(-w/2+r,-h/2); g.lineTo(w/2-r,-h/2); g.arcTo(w/2,-h/2,w/2,-h/2+r,r);
+    g.lineTo(w/2,-n); g.arc(w/2,0,n,-Math.PI/2,Math.PI/2,true);
+    g.lineTo(w/2,h/2-r); g.arcTo(w/2,h/2,w/2-r,h/2,r);
+    g.lineTo(-w/2+r,h/2); g.arcTo(-w/2,h/2,-w/2,h/2-r,r);
+    g.lineTo(-w/2,n); g.arc(-w/2,0,n,Math.PI/2,-Math.PI/2,true);
+    g.lineTo(-w/2,-h/2+r); g.arcTo(-w/2,-h/2,-w/2+r,-h/2,r); g.closePath();
+  }
+  function draw(t){
+    mx+=(tx-mx)*.06; my+=(ty-my)*.06;
+    g.clearRect(0,0,W,H);
+    var s=Math.min(W/520,H/430,1.25), L=6, gap=40*s;
+    var ph=reduce?0:(t%7000)/7000;
+    var off=ph<.5?0:Math.min(1,(ph-.5)/.22)*46, al=ph<.5?1:(ph<.9?Math.max(0,1-(ph-.5)/.34):(ph-.9)/.1);
+    for(var i=0;i<L;i++){
+      var top=i===L-1, z=(i-(L-1)/2)*gap + Math.sin(t/1400+i*.7)*4*s;
+      g.save();
+      g.translate(W*.5+mx*14*(i-2.5)*.25, H*.5 - z + my*8);
+      g.rotate(-0.18+mx*.12+Math.sin(t/3200)*.03);
+      g.transform(.866,.5,-.866,.5,0,0);
+      g.scale(s,s);
+      var a=.16+i*.1;
+      if(!top){
+        ticket(300,190,20,17); g.fillStyle='#111110'; g.fill();
+        g.strokeStyle='rgba(180,190,255,'+a+')'; g.lineWidth=1.3/s; g.stroke();
+      } else {
+        function body(){
+          ticket(300,190,20,17); g.fillStyle='#111110'; g.fill();
+          var gr=g.createLinearGradient(-150,-95,150,95); gr.addColorStop(0,'rgba(111,140,255,.30)'); gr.addColorStop(1,'rgba(111,140,255,.08)');
+          g.fillStyle=gr; g.fill();
+          g.strokeStyle='rgba(145,170,255,.95)'; g.lineWidth=1.6/s; g.stroke();
+        }
+        g.save(); g.beginPath(); g.rect(-200,-120,270,240); g.clip(); body();
+        g.fillStyle='rgba(236,236,232,.94)'; g.font='500 15px "Red Hat Mono", monospace'; g.textBaseline='middle'; g.fillText('SCRIP',-118,-52);
+        g.fillStyle='rgba(145,170,255,.9)'; g.font='400 11px "Red Hat Mono", monospace'; g.fillText('100 = $1',-118,-30);
+        g.fillStyle='rgba(111,140,255,.9)'; g.fillRect(-118,34,40,22); g.fillStyle='rgba(111,140,255,.35)'; g.fillRect(-72,34,20,22); g.fillRect(-46,34,60,22);
+        g.restore();
+        g.save(); g.translate(off*.9,-off*.55); g.globalAlpha=al; g.beginPath(); g.rect(70,-120,200,240); g.clip(); body();
+        g.fillStyle='rgba(145,170,255,.9)'; g.font='400 10px "Red Hat Mono", monospace'; g.textBaseline='middle'; g.fillText('−150',92,-52); g.restore();
+        g.setLineDash([5/s,6/s]); g.strokeStyle='rgba(145,170,255,.7)'; g.lineWidth=1.4/s; g.globalAlpha=off>0?Math.max(0,1-off/12):1; g.beginPath(); g.moveTo(70,-76); g.lineTo(70,76); g.stroke(); g.setLineDash([]); g.globalAlpha=1;
+      }
+      g.restore();
+    }
+  }
+  function loop(t){ draw(t); if(!reduce) requestAnimationFrame(loop); }
+  size(); draw(0);
+  addEventListener('resize',function(){ size(); draw(0); });
+  if(!reduce){
+    requestAnimationFrame(loop);
+    var hero=cv.closest('.hero');
+    hero.addEventListener('pointermove',function(e){ var b=hero.getBoundingClientRect(); tx=(e.clientX-b.left)/b.width-.5; ty=(e.clientY-b.top)/b.height-.5; });
+    hero.addEventListener('pointerleave',function(){tx=0;ty=0;});
+  }
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ draw(0); });
+})();
+</script>
+</body>
+</html>
